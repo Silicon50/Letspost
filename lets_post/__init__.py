@@ -14,5 +14,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
+login_manager.login_view = 'login' # this is showing where the login is located
+login_manager.login_message_category = 'info' #bootstrap stuff to beautify the message
 
 from lets_post import route

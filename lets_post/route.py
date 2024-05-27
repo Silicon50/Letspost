@@ -1,8 +1,9 @@
-from flask import render_template, url_for, flash, redirect
+from flask import render_template, url_for, flash, redirect, request #request is a query parameter
 from lets_post import app, db, bcrypt 
-from lets_post.form import RegistrationForm, LoginForm #for forms
+from lets_post.form import RegistrationForm, LoginForm, UpdateAccountForm #for forms
 from lets_post.models import User, Post #for database settings
-from flask_login import login_user, current_user, logout_user#loggin user,check if the current user is logged in,logout user
+from flask_login import login_user, current_user, logout_user, login_required
+#loggin user,check if the current user is logged in,logout user, allow user access a page only when loggedin
 
 
 
@@ -58,8 +59,9 @@ def login():
         user = User.query.filter_by(email=form.email.data).first()
         if user and bcrypt.check_password_hash(user.password, form.password.data):
             login_user(user,remember=form.remember.data)
-            #flash(f'You have successfully logged In', 'success')
-            return redirect(url_for('home'))
+            next_page = request.args.get('next')
+            flash(f'You have successfully logged In', 'success')
+            return redirect(next_page) if next_page else redirect(url_for('home'))    
         else:
             flash(f'Enter the correct email and password', 'danger')
     return render_template("login.html", title = "Login", form = form)
@@ -69,6 +71,19 @@ def logout():
     logout_user()
     return redirect(url_for('home'))
     
-@app.route("/account", strict_slashes = False)
+@app.route("/account", strict_slashes = False, methods =['GET','POST'])
+@login_required #this decorator shows that we need to login to access this route. we also need to show it where the login is located
 def account():
-    return render_template("account.html", title = "Account")
+    '''returns the account detail of individual user'''
+    form = UpdateAccountForm()
+    if form.validate_on_submit():
+        current_user.username = form.username.data
+        current_user.email = form.email.data
+        db.session.commit()
+        flash('Your profile has been updated')
+        return redirect(url_for('account'))
+    elif request.method == 'GET':
+        form.username.data =  current_user.username
+        form.email.data = current_user.email
+    image_file = url_for('static', filename='profile_pic/' + current_user.image_file)
+    return render_template("account.html", title = "Account", image_file = image_file, form = form)
