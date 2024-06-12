@@ -40,10 +40,11 @@
             </fieldset>
             <div class="form-group">
                 {{form.submit(class="btn btn-outline-info")}}
+                <small class="text-muted ml-2">
+                    <a href="{{url_for('reset_request')}}">Forget password</a>
+                </small>
             </div>
-            <small class="text-muted ml-2">
-                <a href="#">Forget password</a>
-            </small>
+            
         </form>
 
     </div>

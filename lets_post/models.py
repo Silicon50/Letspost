@@ -1,5 +1,6 @@
 from  datetime import datetime
-from lets_post import db, login_manager
+from itsdangerous import URLSafeTimedSerializer #for generating token to reset password
+from lets_post import db, login_manager, app
 from flask_login import UserMixin #is authenticated,active,anonymous,get_id attributes and methods
 
 @login_manager.user_loader
@@ -29,6 +30,21 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(20), nullable = False)
     posts = db.relationship('Post', backref = 'author', lazy = True)
     
+    def get_reset_token(self, expires_sec = 1800):
+        '''generate a token for password reset'''
+        s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+        return s.dumps({'user_id': self.id})
+    
+    @staticmethod
+    def verify_reset_token(token, expires_sec = 1800):
+        '''verify the token for password reset'''
+        s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+        try:
+            user_id = s.loads(token, expires_sec)['user_id']
+        except:
+            return None
+        return User.query.get(user_id)
+        
     def __repr__(self):
         '''representation of the user '''
         return f"User('{self.username}', '{self.email}', '{self.image_file}')"
